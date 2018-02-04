@@ -60,6 +60,16 @@ test_size = 0.4
 
 X_train, X_test, y_train, y_test = train_test_split(x_data, y_data, test_size=test_size, random_state=42)
 
+#Create plot to show training data
+plt.figure()
+plt.scatter(X_train, y_train, marker='o', s=30, color='navy', label='trainin points')
+plt.legend(loc='best')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.savefig('training.png')
+
+
 coefs = [[] for i in range(3)]
 res = [[] for i in range(3)]
 for count, degree in enumerate([1, 2, 10]):
@@ -97,7 +107,6 @@ x_plot = np.linspace(0, 10, 100)
 plt.figure(figsize = (11,5))
 plt.subplot(1,2,1)
 plt.suptitle('First Degree Polynomial Fit')
-plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
 plt.scatter(X_train, y_train, color='navy', s=30, marker='o', label="training points", alpha=0.4)
 plt.plot(x_plot, poly(x_plot, coefs[0]), label='1D fit')
 plt.margins(0.02)
@@ -129,7 +138,6 @@ plt.savefig('1d.png')
 plt.figure(figsize = (11,5))
 plt.subplot(1,2,1)
 plt.suptitle('2nd Degree Polynomial Fit')
-plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
 plt.scatter(X_train, y_train, color='navy', s=30, marker='o', label="training points", alpha=0.4)
 plt.plot(x_plot, poly(x_plot, coefs[1]), label ='2D fit')
 plt.margins(0.02)
@@ -160,7 +168,6 @@ plt.savefig('2d.png')
 plt.figure(figsize = (11,5))
 plt.subplot(1,2,1)
 plt.suptitle('10th Degree Polynomial Fit')
-plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
 plt.scatter(X_train, y_train, color='navy', s=30, marker='o', label="training points", alpha=0.4)
 plt.plot(x_plot, poly(x_plot, coefs[2]), label='10D fit')
 plt.margins(0.02)
