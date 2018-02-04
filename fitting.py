@@ -24,7 +24,7 @@ def poly(x, coef):
 
 def make_new_data():
     x = np.linspace(0, 10, 100)
-    noise = np.random.normal(0, 1, size=len(x), )
+    noise = np.random.normal(0, 1.5, size=len(x), )
     x_noisy = np.add(x, noise)
 
     # create matrix versions of these arrays
@@ -220,6 +220,7 @@ for i in range(runs):
         for k in range(2):
             mean_one_d_coefs.append(np.mean([j[k] for j in one_d_coefs]))
         plt.plot(x_plot, poly(x_plot, mean_one_d_coefs), color='darkblue')
+        plt.title('1st Degree Fit')
     else:
         pass
 
@@ -246,6 +247,7 @@ for i in range(runs):
             mean_two_d_coefs.append(np.mean([j[k] for j in two_d_coefs]))
 
         plt.plot(x_plot, poly(x_plot, mean_two_d_coefs), color='darkblue')
+        plt.title('2nd Degree Fit')
     else:
         pass
 
@@ -265,15 +267,16 @@ for i in range(runs):
     bs_y_10d_fit_test = [poly(j, ten_d_coefs[i]) for j in bs_X_test]
     ten_d_mses.append(mean_squarred_error(bs_y_test, bs_y_10d_fit_test))
 
-    if i == runs - 1 :
+    if i == runs - 1:
         mean_ten_d_coefs = []
         for k in np.arange(11):
             mean_ten_d_coefs.append(np.mean([j[k] for j in ten_d_coefs]))
 
         plt.plot(x_plot, poly(x_plot, mean_ten_d_coefs), color='darkblue')
+        plt.title('10 Degree Fit')
     else:
         pass
-
+plt.suptitle('Bootstrapping Fits')
 plt.savefig('bootstrapped.png')
 plt.clf()
 plt.close('all')
@@ -292,9 +295,55 @@ plt.savefig('boxplots_mse.png')
 plt.close('all')
 
 plt.figure()
-
-plt.hist(mses['one_d'], label='Degree 1', alpha=0.9, bins=10)
-plt.hist(mses['ten_d'], label='Degreee 10', alpha=0.9, bins=20)
-plt.hist(mses['two_d'], label='Degree 2', alpha=0.9, bins=8)
+plt.hist(mses['two_d'], label='Degree 2', alpha=0.8, bins=8)
+plt.hist(mses['one_d'], label='Degree 1', alpha=0.8, bins=10)
+plt.hist(mses['ten_d'], label='Degreee 10', alpha=0.8, bins=20)
 plt.legend(loc='best')
+plt.xlabel('Mean Squared Error')
+plt.ylabel('Count')
 plt.savefig('mse_hists.png')
+plt.close('all')
+
+
+#Now attemping to explore bias-variance tradeoff. Need to plot the MSE vs. the
+#power of the Polynomial
+
+powers = np.linspace(0, 10, 11)
+
+plt.figure()
+mses_train_ = []
+mses_test_ = []
+mses_train_means = []
+mses_test_means = []
+
+for i in range(runs):
+    var_X_test, var_X_train, var_y_test, var_y_train = train_test_split(x_data, y_data, test_size=test_size)
+    mses_train = []
+    mses_test = []
+    for p in powers:
+        coeffiecients = np.polyfit(var_X_train, var_y_train, p)
+        train = [poly(i, coeffiecients) for i in var_X_train]
+        test = [poly(i, coeffiecients) for i in var_X_test]
+        mses_train.append(mean_squarred_error(var_y_train, train))
+        mses_test.append(mean_squarred_error(var_y_test, test))
+
+
+    plt.plot(powers, mses_train, alpha=0.05, color='blue')
+    plt.plot(powers, mses_test, alpha=0.05, color='red')
+    mses_train_.append(mses_train)
+    mses_test_.append(mses_test)
+
+    if i == runs - 1:
+        for k in range(len(powers)):
+            mses_train_means.append(np.mean([j[k] for j in mses_train_]))
+            mses_test_means.append(np.mean([j[k] for j in mses_test_]))
+        plt.plot(powers, mses_train_means, label = 'Mean Training Fit', color='darkblue')
+        plt.plot(powers, mses_test_means, label = 'Mean Testing Fit', color='darkred')
+    else:
+        pass
+
+plt.ylim(0,400)
+plt.ylabel('Mean Squared Error')
+plt.xlabel('Polynomial Degree')
+plt.legend(loc='best')
+plt.savefig('bias_variance.png')
