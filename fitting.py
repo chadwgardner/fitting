@@ -1,0 +1,300 @@
+import pandas as pd
+import numpy as np
+import sklearn.linear_model
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import Ridge
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+from my_stats_package import mean_squarred_error
+sns.set()
+
+
+def f(x):
+    """function to model with a polynomial"""
+    return x**2 - 7*x + 11
+
+def poly(x, coef):
+    terms = []
+    for i in range(len(coef)):
+        terms.append(coef[i] * x ** ((len(coef)- 1 - i)))
+    return sum(terms)
+
+
+def make_new_data():
+    x = np.linspace(0, 10, 100)
+    noise = np.random.normal(0, 1, size=len(x), )
+    x_noisy = np.add(x, noise)
+
+    # create matrix versions of these arrays
+    #X = x[:, np.newaxis]
+    #X_noisy = x_noisy[:, np.newaxis]
+    #X_plot = x_plot[:, np.newaxis]
+
+    y = f(x)
+    y_noisy = f(x_noisy)
+
+    data_stack = np.vstack((x, y_noisy)).T
+    df = pd.DataFrame(data_stack, columns=['x', 'y_noisy'])
+    df.to_csv('data.csv')
+
+    return
+
+"""
+for count, degree in enumerate([2, 3 , 4, 5, 10]):
+    model = make_pipeline(PolynomialFeatures(degree), Ridge())
+    model.fit(X_train, y_train)
+    y_plot = model.predict(X_plot)
+    plt.plot(x_plot, y_plot, linewidth=2,label="degree %d" % degree, alpha=0.5)
+    test_scores[degree] = model.score(X_test, y_test)
+    train_scores[degree] = model.score(X_train, y_train)
+"""
+
+
+data = pd.read_csv('data.csv')
+x_data = data['x']
+y_data = data['y_noisy']
+
+test_size = 0.4
+
+X_train, X_test, y_train, y_test = train_test_split(x_data, y_data, test_size=test_size, random_state=42)
+
+coefs = [[] for i in range(3)]
+res = [[] for i in range(3)]
+for count, degree in enumerate([1, 2, 10]):
+    coefs[count], res[count], _, _, _ = np.polyfit(X_train, y_train, degree, full=True)
+
+y_1d_fit_train = [poly(i, coefs[0]) for i in X_train]
+y_2d_fit_train = [poly(i, coefs[1]) for i in X_train]
+y_10d_fit_train = [poly(i, coefs[2]) for i in X_train]
+
+y_1d_fit_test = [poly(i, coefs[0]) for i in X_test]
+y_2d_fit_test = [poly(i, coefs[1]) for i in X_test]
+y_10d_fit_test = [poly(i, coefs[2]) for i in X_test]
+
+mse_1d_train = mean_squarred_error(y_train, y_1d_fit_train)
+mse_2d_train = mean_squarred_error(y_train, y_2d_fit_train)
+mse_10d_train = mean_squarred_error(y_train, y_10d_fit_train)
+
+mse_1d_test = mean_squarred_error(y_test, y_1d_fit_test)
+mse_2d_test = mean_squarred_error(y_test, y_2d_fit_test)
+mse_10d_test = mean_squarred_error(y_test, y_10d_fit_test)
+
+report = pd.DataFrame(columns = ['Train', 'Test'], index=['1d', '2d', '10d'])
+report.loc['1d'] = [mse_1d_train, mse_1d_test]
+report.loc['2d'] = [mse_2d_train, mse_2d_test]
+report.loc['10d'] = [mse_10d_train, mse_10d_test]
+print(report)
+
+#Textbox properties for plot labels
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+#make x axis
+x_plot = np.linspace(0, 10, 100)
+
+#Make 1D Plots
+plt.figure(figsize = (11,5))
+plt.subplot(1,2,1)
+plt.suptitle('First Degree Polynomial Fit')
+plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
+plt.scatter(X_train, y_train, color='navy', s=30, marker='o', label="training points", alpha=0.4)
+plt.plot(x_plot, poly(x_plot, coefs[0]), label='1D fit')
+plt.margins(0.02)
+plt.legend(loc='upper left')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.title('1-Degree Training Data')
+plt.text(5, 70, 'MSE: ' + str(np.around(mse_1d_train,decimals=2)), fontsize=14,
+    verticalalignment='top', bbox=props)
+
+
+plt.subplot(1,2,2)
+plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
+plt.scatter(X_test, y_test, color='maroon', s=30, marker='o', label='test point', alpha=0.4)
+plt.plot(x_plot, poly(x_plot, coefs[0]), label='1D fit: ' + str(np.around(mse_1d_test,decimals=2)))
+plt.margins(0.02)
+plt.legend(loc='upper left')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.title('1-Degree Test Data')
+plt.text(5, 70, 'MSE: ' + str(np.around(mse_1d_test,decimals=2)), fontsize=14,
+    verticalalignment='top', bbox=props)
+
+plt.savefig('1d.png')
+
+#Make 2D Plots
+plt.figure(figsize = (11,5))
+plt.subplot(1,2,1)
+plt.suptitle('2nd Degree Polynomial Fit')
+plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
+plt.scatter(X_train, y_train, color='navy', s=30, marker='o', label="training points", alpha=0.4)
+plt.plot(x_plot, poly(x_plot, coefs[1]), label ='2D fit')
+plt.margins(0.02)
+plt.legend(loc='upper left')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.title('2-Degree Training Data')
+plt.text(5, 70, 'MSE: ' + str(np.around(mse_2d_train,decimals=2)), fontsize=14,
+    verticalalignment='top', bbox=props)
+
+plt.subplot(1,2,2)
+plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
+plt.scatter(X_test, y_test, color='maroon', s=30, marker='o', label='test point', alpha=0.4)
+plt.plot(x_plot, poly(x_plot, coefs[1]), label ='2D fit')
+plt.margins(0.02)
+plt.legend(loc='upper left')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.title('2-Degree Test Data')
+plt.text(5, 70, 'MSE: ' + str(np.around(mse_2d_test,decimals=2)), fontsize=14,
+    verticalalignment='top', bbox=props)
+
+plt.savefig('2d.png')
+
+#Make 10D Plots
+plt.figure(figsize = (11,5))
+plt.subplot(1,2,1)
+plt.suptitle('10th Degree Polynomial Fit')
+plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
+plt.scatter(X_train, y_train, color='navy', s=30, marker='o', label="training points", alpha=0.4)
+plt.plot(x_plot, poly(x_plot, coefs[2]), label='10D fit')
+plt.margins(0.02)
+plt.legend(loc='upper left')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.title('10-Degree Training Data')
+plt.text(5, 70, 'MSE: ' + str(np.around(mse_10d_train,decimals=2)), fontsize=14,
+    verticalalignment='top', bbox=props)
+
+plt.subplot(1,2,2)
+plt.plot(x_plot, f(x_plot), color='darkred', linewidth=2, label="target", alpha=0.7)
+plt.scatter(X_test, y_test, color='maroon', s=30, marker='o', label='test point', alpha=0.4)
+plt.plot(x_plot, poly(x_plot, coefs[2]), label='10D fit')
+plt.margins(0.02)
+plt.legend(loc='upper left')
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+plt.title('10-Degree Test Data')
+plt.text(5, 70, 'MSE: ' + str(np.around(mse_10d_test,decimals=2)), fontsize=14,
+    verticalalignment='top', bbox=props)
+
+plt.savefig('10d.png')
+plt.close('all')
+
+
+#Bootstraping: I need to first bootstrap the coefs then graph them. It would be cool
+#to capture the MSE for each bootstrap as well, then plot the distribution
+
+#Number of bootstraps
+runs = 100
+
+plt.figure(figsize = (11,5))
+plt.subplot(1,3,1)
+
+
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+one_d_coefs = []
+one_d_mses = []
+
+for i in range(runs):
+    #Make bootstrap rep and plot the resulting polynomial - 1D
+    bs_X_train, bs_X_test, bs_y_train, bs_y_test = train_test_split(x_data, y_data, test_size=test_size)
+    one_d_coefs.append(np.polyfit(bs_X_train, bs_y_train, 1))
+    plt.plot(x_plot, poly(x_plot, one_d_coefs[i]), color='blue', alpha=0.03)
+
+    #Find MSE for the bootstrap
+    bs_y_1d_fit_test = [poly(j, one_d_coefs[i]) for j in bs_X_test]
+    one_d_mses.append(mean_squarred_error(bs_y_test, bs_y_1d_fit_test))
+
+    if i == runs - 1:
+        mean_one_d_coefs = []
+        for k in range(2):
+            mean_one_d_coefs.append(np.mean([j[k] for j in one_d_coefs]))
+        plt.plot(x_plot, poly(x_plot, mean_one_d_coefs), color='darkblue')
+    else:
+        pass
+
+plt.subplot(1,3,2)
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+
+two_d_coefs = []
+two_d_mses = []
+for i in range(runs):
+    ##Make bootstrap rep and plot the resulting polynomial - 2D
+    bs_X_train, bs_X_test, bs_y_train, bs_y_test = train_test_split(x_data, y_data, test_size=test_size)
+    two_d_coefs.append(np.polyfit(bs_X_train, bs_y_train, 2))
+    plt.plot(x_plot, poly(x_plot, two_d_coefs[i]), color='b', alpha=0.03)
+
+    #Find MSE for the bootstrap
+    bs_y_2d_fit_test = [poly(j, two_d_coefs[i]) for j in bs_X_test]
+    two_d_mses.append(mean_squarred_error(bs_y_test, bs_y_2d_fit_test))
+
+    if i == runs - 1:
+        mean_two_d_coefs = []
+        for k in np.arange(3):
+            mean_two_d_coefs.append(np.mean([j[k] for j in two_d_coefs]))
+
+        plt.plot(x_plot, poly(x_plot, mean_two_d_coefs), color='darkblue')
+    else:
+        pass
+
+plt.subplot(1,3,3)
+plt.ylim(-5,75)
+plt.xticks([])
+plt.yticks([])
+
+ten_d_coefs = []
+ten_d_mses = []
+for i in range(runs):
+    bs_X_train, bs_X_test, bs_y_train, bs_y_test = train_test_split(x_data, y_data, test_size=test_size)
+    ten_d_coefs.append(np.polyfit(bs_X_train, bs_y_train, 10))
+    plt.plot(x_plot, poly(x_plot, ten_d_coefs[i]), color='blue', alpha=0.03)
+
+    #Find MSE for the bootstraps
+    bs_y_10d_fit_test = [poly(j, ten_d_coefs[i]) for j in bs_X_test]
+    ten_d_mses.append(mean_squarred_error(bs_y_test, bs_y_10d_fit_test))
+
+    if i == runs - 1 :
+        mean_ten_d_coefs = []
+        for k in np.arange(11):
+            mean_ten_d_coefs.append(np.mean([j[k] for j in ten_d_coefs]))
+
+        plt.plot(x_plot, poly(x_plot, mean_ten_d_coefs), color='darkblue')
+    else:
+        pass
+
+plt.savefig('bootstrapped.png')
+plt.clf()
+plt.close('all')
+
+# Plot MSE histograms
+
+data = np.array([one_d_mses, two_d_mses, ten_d_mses])
+data = np.transpose(data)
+mses = pd.DataFrame(data, columns=['one_d', 'two_d', 'ten_d'])
+mses = mses[mses['ten_d'] < 500]
+sns.boxplot(data=mses)
+plt.xlabel('Degree of Polynomial Model')
+plt.ylabel('Mean Squared Error')
+plt.legend(loc='best')
+plt.savefig('boxplots_mse.png')
+plt.close('all')
+
+plt.figure()
+
+plt.hist(mses['one_d'], label='Degree 1', alpha=0.9, bins=10)
+plt.hist(mses['ten_d'], label='Degreee 10', alpha=0.9, bins=20)
+plt.hist(mses['two_d'], label='Degree 2', alpha=0.9, bins=8)
+plt.legend(loc='best')
+plt.savefig('mse_hists.png')
