@@ -93,7 +93,7 @@ plt.close()
 #Notice that coefs is a list of lists, with each entry being the list of coeffients
 #for our 1, 2, and 10 degree functions, respectively.
 coefs = [[] for i in range(3)]
-res = [[] for i in range(3)].
+res = [[] for i in range(3)]
 for count, degree in enumerate([1, 2, 10]):
     coefs[count], res[count], _, _, _ = np.polyfit(X_train, y_train, degree, full=True)
 
